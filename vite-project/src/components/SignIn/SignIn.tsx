@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import firebase from 'firebase/app';
 import { useSigninCheck } from 'reactfire';
-import { useAuthState, useSignInWithGoogle } from 'react-firebase-hooks/auth'; 
+import { useAuthState, useSignInWithGoogle, useSignInWithFacebook } from 'react-firebase-hooks/auth'; 
 import {
     getAuth,
     GoogleAuthProvider,
+    FacebookAuthProvider, //**added */
     signOut,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -24,6 +25,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { styled } from '@mui/system'; 
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { Input, InputPassword } from '../sharedComponents'; 
+import { Facebook } from '@mui/icons-material';
 
 const signinStyles = {
     googleButton: {
@@ -44,6 +46,29 @@ const signinStyles = {
         cursor: 'pointer'
     },
     googleLogo: {
+        width: '48px',
+        height: '48px',
+        display: 'block'
+    },
+    //added*** facebookbutton and facebook logo
+    facebookButton: {
+        backgroundColor: 'rgb(66, 133, 244)',
+        margin: '2em',
+        padding: 0,
+        color: 'white',
+        height: '50px', 
+        width: '250px',
+        border: 'none', 
+        textAlign: 'center',
+        boxShadow: 'rgb(0 0 0 / 25%) 0px 2px 4px 0px',
+        fontSize: '16px',
+        lineHeight: '48px',
+        display: 'block',
+        borderRadius: '10px',
+        fontFamily: 'Roboto, arial, sans-serif',
+        cursor: 'pointer'
+    },
+    facebookLogo: {
         width: '48px',
         height: '48px',
         display: 'block'
@@ -126,6 +151,57 @@ export const GoogleButton = (props: ButtonProps) => {
     }
 }
 
+
+//****added facebook login*****
+export const FacebookButton = (props: ButtonProps) => {
+    const navigate = useNavigate();
+    const auth = getAuth(); 
+    const [ signInWithFacebook, user, loading, error ] = useSignInWithFacebook(auth)
+
+    const signIn = async () => {
+        await signInWithFacebook()
+        console.log(auth)
+        if (auth.currentUser) {
+            localStorage.setItem('myAuth', 'true')
+            navigate('/dashboard')
+        } else {
+            navigate('/signin')
+        }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log(user.email)
+            console.log(user.uid)
+        }
+    })
+
+    const signUsOut = async () => {
+        await signOut(auth)
+
+        localStorage.setItem('myAuth', 'false')
+        navigate('/signin')
+    }
+
+    if (loading){
+        return (<CircularProgress />) 
+    }
+
+    const myAuth = localStorage.getItem('myAuth')
+
+    if (myAuth === 'true') {
+        return (
+            <Button variant='contained' color='secondary' onClick={signUsOut}>Sign Out</Button>
+        )
+    } else {
+        return (
+            <Button sx={ signinStyles.facebookButton } onClick={signIn}>Sign In With Facebook</Button>
+        )
+    }
+
+
+}
+
 interface UserProps {
     email: string,
     password: string
@@ -191,6 +267,7 @@ export const SignIn = () => {
             </form>
             <NavA to='/signup'>Don't Have an account? Register Now!</NavA>
             <GoogleButton open={open} onClick={handleSnackClosed} />
+            <FacebookButton open={open} onClick={handleSnackClosed} /> 
             <Snackbar message='success' open={alertOpen} autoHideDuration={3000} onClose={navToDash}>
                 <div>
                     <Alert severity='success'>
